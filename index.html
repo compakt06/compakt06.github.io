@@ -36,25 +36,117 @@
         0 20px 40px rgba(0, 0, 0, 0.25);
     }
 
-    .box h1 {
+    .color-changing {
+      transition: color 0.5s ease;
+    }
+
+    h1 {
       font-family: 'Noto Sans JP', sans-serif;
       font-size: 2.5em;
-      color: #2c3e50;
       margin-bottom: 10px;
     }
 
-    .box h6 {
+    h6 {
       font-size: 1.1em;
       font-weight: normal;
+      margin: 0 0 15px 0;
+    }
+
+    .time-box {
+      background-color: #ffffff;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .time-box p {
+      margin: 5px 0;
+      font-size: 1em;
+      color: #333;
+    }
+
+    .location {
+      margin-top: 10px;
+      font-size: 0.9em;
       color: #555;
-      margin: 0;
     }
   </style>
 </head>
 <body>
   <div class="box">
-    <h1>ようこそ</h1>
-    <h6>Welcome to Jakub Zieliński Page (づ ◕‿◕ )づ</h6>
+    <h1 class="color-changing">ようこそ</h1>
+    <h6 class="color-changing">Welcome to Jakub Zieliński Page (づ ◕‿◕ )づ</h6>
+    
+    <div class="time-box">
+      <p id="local-time">Local Time: --:--:--</p>
+      <p id="spain-time">Spain Time: --:--:--</p>
+      <div class="location" id="location">Getting your location...</div>
+    </div>
   </div>
+
+  <script>
+    // Random color for text
+    function getRandomColor() {
+      const r = Math.floor(Math.random() * 256);
+      const g = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function changeTextColors() {
+      const elements = document.querySelectorAll('.color-changing');
+      elements.forEach(el => {
+        el.style.color = getRandomColor();
+      });
+    }
+
+    setInterval(changeTextColors, 1000);
+
+    // Update time
+    function updateClocks() {
+      const now = new Date();
+
+      const localTimeStr = now.toLocaleTimeString();
+      const spainTimeStr = now.toLocaleTimeString("en-GB", {
+        timeZone: "Europe/Madrid",
+        hour12: false
+      });
+
+      document.getElementById("local-time").textContent = "Local Time: " + localTimeStr;
+      document.getElementById("spain-time").textContent = "Spain Time: " + spainTimeStr;
+    }
+
+    setInterval(updateClocks, 1000);
+    updateClocks();
+
+    // Detect and display current city
+    function getCityFromCoordinates(lat, lon) {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          const city = data.address.city || data.address.town || data.address.village || data.address.hamlet || 'Unknown location';
+          document.getElementById('location').textContent = `You are in: ${city}`;
+        })
+        .catch(() => {
+          document.getElementById('location').textContent = "Could not determine your city.";
+        });
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          getCityFromCoordinates(latitude, longitude);
+        },
+        () => {
+          document.getElementById('location').textContent = "Location access denied.";
+        }
+      );
+    } else {
+      document.getElementById('location').textContent = "Geolocation not supported.";
+    }
+  </script>
 </body>
 </html>
