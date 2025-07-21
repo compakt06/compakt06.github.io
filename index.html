@@ -80,13 +80,11 @@
     
     <div class="time-box">
       <p id="local-time">Local Time: --:--:--</p>
-      <p id="spain-time">Spain Time: --:--:--</p>
       <div class="location" id="location">Getting your location...</div>
     </div>
   </div>
 
   <script>
-    // Random color for text
     function getRandomColor() {
       const r = Math.floor(Math.random() * 256);
       const g = Math.floor(Math.random() * 256);
@@ -103,26 +101,17 @@
 
     setInterval(changeTextColors, 1000);
 
-    // Update time
     function updateClocks() {
       const now = new Date();
-
       const localTimeStr = now.toLocaleTimeString();
-      const spainTimeStr = now.toLocaleTimeString("en-GB", {
-        timeZone: "Europe/Madrid",
-        hour12: false
-      });
-
       document.getElementById("local-time").textContent = "Local Time: " + localTimeStr;
-      document.getElementById("spain-time").textContent = "Spain Time: " + spainTimeStr;
     }
 
     setInterval(updateClocks, 1000);
     updateClocks();
 
-    // Detect and display current city
     function getCityFromCoordinates(lat, lon) {
-      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=local`;
       fetch(url)
         .then(response => response.json())
         .then(data => {
