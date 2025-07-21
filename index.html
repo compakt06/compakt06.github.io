@@ -10,7 +10,8 @@
       margin: 0;
       padding: 0;
       height: 100vh;
-      background: linear-gradient(to bottom right, #e0e0e0, #ffffff);
+      background: url('https://media1.tenor.com/m/zVOKTGRnA8kAAAAC/water-lake.gif') no-repeat center center fixed;
+      background-size: cover;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -20,12 +21,13 @@
     .box {
       width: 500px;
       padding: 30px;
-      background: #f5f5f5;
+      background: rgba(245, 245, 245, 0.9);
       box-shadow:
         0 4px 8px rgba(0, 0, 0, 0.1),
         0 10px 25px rgba(0, 0, 0, 0.15);
       border-radius: 15px;
       text-align: center;
+      backdrop-filter: blur(3px);
       transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
@@ -53,7 +55,7 @@
     }
 
     .time-box {
-      background-color: #ffffff;
+      background-color: #ffffffdd;
       padding: 15px;
       margin-top: 15px;
       border-radius: 10px;
