@@ -53,3 +53,10 @@ a:hover {
     display: block;
     border-radius: 10px 10px 0 0;
 }
+
+p{
+    text-align: center;
+    color: gray;
+    font-size: medium;
+    font-family: sans-serif;
+}
