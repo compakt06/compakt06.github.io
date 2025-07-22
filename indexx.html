@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jakub Zieliński Page</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP&family=Roboto:wght@400;700&display=swap');
+
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background: url('https://media1.tenor.com/m/zVOKTGRnA8kAAAAC/water-lake.gif') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .box {
+      width: 500px;
+      padding: 30px;
+      background: rgba(245, 245, 245, 0.9);
+      box-shadow:
+        0 4px 8px rgba(0, 0, 0, 0.1),
+        0 10px 25px rgba(0, 0, 0, 0.15);
+      border-radius: 15px;
+      text-align: center;
+      backdrop-filter: blur(3px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .box:hover {
+      transform: translateY(-5px);
+      box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.2),
+        0 20px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .color-changing {
+      transition: color 0.5s ease;
+    }
+
+    h1 {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    h6 {
+      font-size: 1.1em;
+      font-weight: normal;
+      margin: 0 0 15px 0;
+    }
+
+    .time-box {
+      background-color: #ffffffdd;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .time-box p {
+      margin: 5px 0;
+      font-size: 1em;
+      color: #333;
+    }
+
+    .location {
+      margin-top: 10px;
+      font-size: 0.9em;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1 class="color-changing">ようこそ</h1>
+    <h6 class="color-changing">Welcome to Jakub Zieliński Page (づ ◕‿◕ )づ</h6>
+    
+    <div class="time-box">
+      <p id="local-time">Local Time: --:--:--</p>
+      <div class="location" id="location">Getting your location...</div>
+    </div>
+  </div>
+
+  <script>
+    function getRandomColor() {
+      const r = Math.floor(Math.random() * 256);
+      const g = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    function changeTextColors() {
+      const elements = document.querySelectorAll('.color-changing');
+      elements.forEach(el => {
+        el.style.color = getRandomColor();
+      });
+    }
+
+    setInterval(changeTextColors, 1000);
+
+    function updateClocks() {
+      const now = new Date();
+      const localTimeStr = now.toLocaleTimeString();
+      document.getElementById("local-time").textContent = "Local Time: " + localTimeStr;
+    }
+
+    setInterval(updateClocks, 1000);
+    updateClocks();
+
+    function getCityFromCoordinates(lat, lon) {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=local`;
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          const city = data.address.city || data.address.town || data.address.village || data.address.hamlet || 'Unknown location';
+          document.getElementById('location').textContent = `You are in: ${city}`;
+        })
+        .catch(() => {
+          document.getElementById('location').textContent = "Could not determine your city.";
+        });
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          getCityFromCoordinates(latitude, longitude);
+        },
+        () => {
+          document.getElementById('location').textContent = "Location access denied.";
+        }
+      );
+    } else {
+      document.getElementById('location').textContent = "Geolocation not supported.";
+    }
+  </script>
+</body>
+</html>
