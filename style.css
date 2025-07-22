@@ -1,8 +1,14 @@
 h1 {
     color: red;
+    text-align: center;
 
 }
 
-a{
+a {
+    
     font-size: large;
+}
+
+a:visited {
+    color: black;
 }
