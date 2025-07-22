@@ -33,3 +33,19 @@ img {
     width: 400px;
     height: 400px;
 }
+
+textarea[readonly] {
+  background-color: #f0f0f0;
+  color: #888;
+  font-style: italic;
+  cursor: not-allowed;
+}
+
+input[type="checkbox"]:checked:disabled + label {
+  color: #b22222;
+  font-weight: bold;
+  text-decoration: line-through;
+  cursor: not-allowed;
+  user-select: none;
+}
+
