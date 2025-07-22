@@ -1,20 +1,35 @@
 h1 {
     color: red;
     text-align: center;
+}
 
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
 }
 
 a {
-    
     font-size: large;
+    text-decoration: none;
+    color: blue;
+    font-weight: bold;
 }
 
 a:visited {
     color: black;
 }
 
-img{
-    align-items: center;
+a:hover {
+    color: darkred;
+}
+
+img {
+    display: block;
+    margin: 20px auto;
     width: 400px;
     height: 400px;
 }
