@@ -33,12 +33,12 @@ function App() {
         <label htmlFor="locked-checkbox">hah you cant undo me</label>
 
         {/* Image from first file */}
-        <img src="images/anime-aaaa.gif" alt="Cool animation" />
+        <img src="/images/anime-aaaa.gif" alt="Cool animation" />
 
         {/* Cards from second file */}
         <div className="card">
           <img
-            src="images/Y0_-_Character_Profile_-_Kazuma_Kiryu.webp"
+            src="/images/Y0_-_Character_Profile_-_Kazuma_Kiryu.webp"
             alt="Kiryu Kazuma"
           />
           <h2>Kiryu Kazuma</h2>
@@ -50,7 +50,7 @@ function App() {
 
         <div className="card">
           <img
-            src="images/Y0_-_Character_Profile_-_Goro_Majima.webp"
+            src="/images/Y0_-_Character_Profile_-_Goro_Majima.webp"
             alt="Goro Majima"
           />
           <h2>Goro Majima</h2>
@@ -62,7 +62,7 @@ function App() {
 
         <div className="card">
           <img
-            src="images/Y0_-_Character_Profile_-_Akira_Nishikiyama.webp"
+            src="/images/Y0_-_Character_Profile_-_Akira_Nishikiyama.webp"
             alt="Akira Nishikiyama"
           />
           <h2>Akira Nishikiyama</h2>
