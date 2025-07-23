@@ -1,13 +1,6 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
-import './style.css'; // your main CSS
-import './characters-style.css'; // characters specific CSS
-import KiryuImage from './images/Y0_-_Character_Profile_-_Kazuma_Kiryu.webp'
-import MajimaImage from './images/Y0_-_Character_Profile_-_Goro_Majima.webp'
-import NishikiamaImage from './images/Y0_-_Character_Profile_-_Akira_Nishikiyama.webp'
-import MainGif from './images/anime-aaaa.gif'
+import './style.css'
+import './characters-style.css'
 
 function App() {
   return (
@@ -21,7 +14,7 @@ function App() {
       </div>
 
       <div className="content">
-        {/* Read-only editor + checkbox from first file */}
+        {/* Read-only editor */}
         <label htmlFor="readonly-textarea">Read-only editor:</label><br />
         <textarea
           id="readonly-textarea"
@@ -33,18 +26,16 @@ function App() {
 
         <br /><br />
 
+        {/* Locked checkbox */}
         <input type="checkbox" id="locked-checkbox" checked disabled />
         <label htmlFor="locked-checkbox">hah you cant undo me</label>
 
-        {/* Image from first file */}
-        <img src={MainGif} alt="Cool animation" />
+        {/* Main GIF image */}
+        <img src="/images/anime-aaaa.gif" alt="Cool animation" />
 
-        {/* Cards from second file */}
+        {/* Character Cards */}
         <div className="card">
-          <img
-            src={KiryuImage}
-            alt="Kiryu Kazuma"
-          />
+          <img src="/images/Y0_-_Character_Profile_-_Kazuma_Kiryu.webp" alt="Kiryu Kazuma" />
           <h2>Kiryu Kazuma</h2>
           <p>Very cool guy</p>
           <button onClick={() => window.location.href = 'https://yakuza.fandom.com/wiki/Kazuma_Kiryu'}>
@@ -53,10 +44,7 @@ function App() {
         </div>
 
         <div className="card">
-          <img
-            src={MajimaImage}
-            alt="Goro Majima"
-          />
+          <img src="/images/Y0_-_Character_Profile_-_Goro_Majima.webp" alt="Goro Majima" />
           <h2>Goro Majima</h2>
           <p>Cool guy</p>
           <button onClick={() => window.location.href = 'https://yakuza.fandom.com/wiki/Goro_Majima'}>
@@ -65,10 +53,7 @@ function App() {
         </div>
 
         <div className="card">
-          <img
-            src={NishikiamaImage}
-            alt="Akira Nishikiyama"
-          />
+          <img src="/images/Y0_-_Character_Profile_-_Akira_Nishikiyama.webp" alt="Akira Nishikiyama" />
           <h2>Akira Nishikiyama</h2>
           <p>Not so cool (very evil)</p>
           <button onClick={() => window.location.href = 'https://yakuza.fandom.com/wiki/Akira_Nishikiyama'}>
@@ -77,8 +62,7 @@ function App() {
         </div>
       </div>
     </>
-  );
+  )
 }
 
-export default App;
-
+export default App
