@@ -4,6 +4,10 @@ import viteLogo from '/vite.svg'
 import './App.css'
 import './style.css'; // your main CSS
 import './characters-style.css'; // characters specific CSS
+import KiryuImage from './images/Y0_-_Character_Profile_-_Kazuma_Kiryu.webp'
+import MajimaImage from './images/Y0_-_Character_Profile_-_Goro_Majima.webp'
+import NishikiamaImage from './images/Y0_-_Character_Profile_-_Akira_Nishikiyama.webp'
+import MainGif from './images/anime-aaaa.gif'
 
 function App() {
   return (
@@ -33,12 +37,12 @@ function App() {
         <label htmlFor="locked-checkbox">hah you cant undo me</label>
 
         {/* Image from first file */}
-        <img src="/images/anime-aaaa.gif" alt="Cool animation" />
+        <img src={MainGif} alt="Cool animation" />
 
         {/* Cards from second file */}
         <div className="card">
           <img
-            src="/images/Y0_-_Character_Profile_-_Kazuma_Kiryu.webp"
+            src={KiryuImage}
             alt="Kiryu Kazuma"
           />
           <h2>Kiryu Kazuma</h2>
@@ -50,7 +54,7 @@ function App() {
 
         <div className="card">
           <img
-            src="/images/Y0_-_Character_Profile_-_Goro_Majima.webp"
+            src={MajimaImage}
             alt="Goro Majima"
           />
           <h2>Goro Majima</h2>
@@ -62,7 +66,7 @@ function App() {
 
         <div className="card">
           <img
-            src="/images/Y0_-_Character_Profile_-_Akira_Nishikiyama.webp"
+            src={NishikiamaImage}
             alt="Akira Nishikiyama"
           />
           <h2>Akira Nishikiyama</h2>
