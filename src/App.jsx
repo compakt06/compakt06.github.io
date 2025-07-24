@@ -1,7 +1,7 @@
 import './App.css'
 import './style.css'
 import './characters-style.css'
-import KiryuImage from './assets/images/Y0_-_Character_Profile_-_Kazuma_Kiryu'
+import KiryuImage from './assets/images/Y0_-_Character_Profile_-_Kazuma_Kiryu.webp'
 
 function App() {
   return (
