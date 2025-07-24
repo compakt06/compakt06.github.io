@@ -1,8 +1,6 @@
 import './App.css'
 import './style.css'
 import './characters-style.css'
-import KiryuImage from './assets/Y0_-_Character_Profile_-_Kazuma_Kiryu.webp'
-
 function App() {
   return (
     <>
@@ -36,13 +34,17 @@ function App() {
 
         {/* Character Cards */}
         <div className="card">
-          <img src={KiryuImage} alt="Kiryu Kazuma" />
-          <h2>Kiryu Kazuma</h2>
-          <p>Very cool guy</p>
-          <button onClick={() => window.location.href = 'https://yakuza.fandom.com/wiki/Kazuma_Kiryu'}>
-            More Info
-          </button>
-        </div>
+  <img
+    src="https://static.wikia.nocookie.net/yakuza/images/6/62/Y0_-_Character_Profile_-_Kazuma_Kiryu.png/revision/latest/scale-to-width-down/1000?cb=20221006005336"
+    alt="Kiryu Kazuma"
+  />
+  <h2>Kiryu Kazuma</h2>
+  <p>Very cool guy</p>
+  <button onClick={() => window.location.href = 'https://yakuza.fandom.com/wiki/Kazuma_Kiryu'}>
+    More Info
+  </button>
+</div>
+
 
         <div className="card">
           <img src="/images/Y0_-_Character_Profile_-_Goro_Majima.webp" alt="Goro Majima" />
