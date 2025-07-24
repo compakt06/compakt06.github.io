@@ -1,6 +1,7 @@
 import './App.css'
 import './style.css'
 import './characters-style.css'
+import KiryuImage from './assets/images/Y0_-_Character_Profile_-_Kazuma_Kiryu'
 
 function App() {
   return (
@@ -35,7 +36,7 @@ function App() {
 
         {/* Character Cards */}
         <div className="card">
-          <img src="/images/Y0_-_Character_Profile_-_Kazuma_Kiryu.webp" alt="Kiryu Kazuma" />
+          <img src={KiryuImage} alt="Kiryu Kazuma" />
           <h2>Kiryu Kazuma</h2>
           <p>Very cool guy</p>
           <button onClick={() => window.location.href = 'https://yakuza.fandom.com/wiki/Kazuma_Kiryu'}>
