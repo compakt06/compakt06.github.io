@@ -1,6 +1,10 @@
 import './App.css'
 import './style.css'
 import './characters-style.css'
+import animeGif from './assets/images/anime-aaaa.gif';
+import kiryuImage from './assets/images/Y0_-_Character_Profile_-_Kazuma_Kiryu.webp';
+import majimaImage from './assets/images/Y0_-_Character_Profile_-_Goro_Majima.webp';
+import nishikiImage from './assets/images/Y0_-_Character_Profile_-_Akira_Nishikiyama.webp';
 
 function App() {
   return (
@@ -31,11 +35,11 @@ function App() {
         <label htmlFor="locked-checkbox">hah you cant undo me</label>
 
         {/* Main GIF image */}
-        <img src="/images/anime-aaaa.gif" alt="Cool animation" />
+        <img src={animeGif} alt="Cool animation" />
 
         {/* Character Cards */}
         <div className="card">
-          <img src="/images/Y0_-_Character_Profile_-_Kazuma_Kiryu.webp" alt="Kiryu Kazuma" />
+          <img src={kiryuImage} alt="Kiryu Kazuma" />
           <h2>Kiryu Kazuma</h2>
           <p>Very cool guy</p>
           <button onClick={() => window.location.href = 'https://yakuza.fandom.com/wiki/Kazuma_Kiryu'}>
@@ -44,7 +48,7 @@ function App() {
         </div>
 
         <div className="card">
-          <img src="/images/Y0_-_Character_Profile_-_Goro_Majima.webp" alt="Goro Majima" />
+          <img src={majimaImage} alt="Goro Majima" />
           <h2>Goro Majima</h2>
           <p>Cool guy</p>
           <button onClick={() => window.location.href = 'https://yakuza.fandom.com/wiki/Goro_Majima'}>
@@ -53,7 +57,7 @@ function App() {
         </div>
 
         <div className="card">
-          <img src="/images/Y0_-_Character_Profile_-_Akira_Nishikiyama.webp" alt="Akira Nishikiyama" />
+          <img src={nishikiImage} alt="Akira Nishikiyama" />
           <h2>Akira Nishikiyama</h2>
           <p>Not so cool (very evil)</p>
           <button onClick={() => window.location.href = 'https://yakuza.fandom.com/wiki/Akira_Nishikiyama'}>
