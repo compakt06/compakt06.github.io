@@ -1,11 +1,9 @@
-import './App.css'
+import OrdersList from "./orders/OrdersList";
 
-function App() {
+export default function App() {
   return (
-    <div className="App">
-      
-    </div>
-  )
+    <main className="p-6 bg-gray-100 min-h-screen">
+      <OrdersList />
+    </main>
+  );
 }
-
-export default App
