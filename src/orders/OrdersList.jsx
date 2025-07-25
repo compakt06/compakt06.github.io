@@ -1,118 +1,98 @@
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, query } from 'firebase/firestore';
-import { db, auth } from '../firebase/firebase';
-import { signOut } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
-import { Container, Card, Button, Spinner, Alert, ListGroup, Badge } from 'react-bootstrap';
-import { useAuth } from '../auth/authContext';
+import { collection, onSnapshot, query, doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase/firebase';
+import { Badge, Button, Card, ListGroup } from 'react-bootstrap';
 
 export default function OrdersList() {
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const { currentUser } = useAuth();
+
+  // Update order status
+  const handleCompleteOrder = async (orderId) => {
+    try {
+      await updateDoc(doc(db, "order", orderId), {
+        status: "ready_to_serve"
+      });
+    } catch (error) {
+      console.error("Error updating order:", error);
+    }
+  };
+
+  // Calculate waiting time
+  const getWaitingTime = (createdAt) => {
+    if (!createdAt) return "0m";
+    const createdTime = createdAt.toDate();
+    const now = new Date();
+    const diffMinutes = Math.floor((now - createdTime) / (1000 * 60));
+    
+    if (diffMinutes >= 60) {
+      const hours = Math.floor(diffMinutes / 60);
+      const mins = diffMinutes % 60;
+      return `${hours}h ${mins}m`;
+    }
+    return `${diffMinutes}m`;
+  };
 
   useEffect(() => {
     const q = query(collection(db, "order"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const allOrders = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        allOrders.push({
-          id: doc.id,
-          table: data.table || 'Nieznany',
-          staffID: data.staffID || 'Nieznany',
-          status: data.status || 'Oczekujące',
-          createdAt: data.created_at || data.createdAt,
-          items: data.items || []
-        });
-      });
+      const allOrders = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt || doc.data().created_at
+      }));
       setOrders(allOrders);
-      setLoading(false);
-    }, (error) => {
-      console.error("Firestore error:", error);
-      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <Container className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <Spinner animation="border" variant="primary" />
-      </Container>
-    );
-  }
+  // Dynamic title (excludes "ready_to_serve" orders)
+  useEffect(() => {
+    const pendingOrders = orders.filter(order => 
+      order.status !== "ready_to_serve"
+    ).length;
+    document.title = `🍗 (${pendingOrders}) New Orders - KFC System`;
+  }, [orders]);
 
   return (
-    <Container className="py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="mb-0">Zamówienia ({orders.length})</h1>
-        <div className="d-flex align-items-center">
-          <span className="me-3">
-            Witaj, <strong>{currentUser?.displayName || currentUser?.email}</strong>
-          </span>
-          <Button variant="outline-danger" onClick={handleLogout}>
-            Wyloguj
-          </Button>
-        </div>
-      </div>
-      
-      {orders.length === 0 ? (
-        <Alert variant="info">Brak zamówień</Alert>
-      ) : (
-        <div className="d-grid gap-3">
-          {orders.map((order) => (
-            <Card key={order.id}>
-              <Card.Body>
-                <div className="d-flex justify-content-between mb-3">
-                  <div>
-                    <strong>Stolik:</strong> {order.table}
-                  </div>
-                  <div>
-                    <strong>Kelner:</strong> {order.staffID}
-                  </div>
-                  <div>
-                    <strong>Status:</strong> {' '}
-                    <Badge bg={
-                      order.status.toLowerCase().includes('complete') ? 'success' :
-                      order.status.toLowerCase().includes('progress') ? 'primary' : 'warning'
-                    }>
-                      {order.status}
-                    </Badge>
-                  </div>
+    <div className="order-list">
+      {orders.map((order) => (
+        <Card key={order.id} className="mb-3">
+          <Card.Body>
+            <div className="d-flex justify-content-between align-items-start">
+              <div>
+                <h5>Table {order.table}</h5>
+                <Badge bg={
+                  order.status === "ready_to_serve" ? "success" :
+                  order.status === "cooking" ? "primary" : "warning"
+                }>
+                  {order.status}
+                </Badge>
+                <div className="text-muted mt-1">
+                  Waiting: {getWaitingTime(order.createdAt)}
                 </div>
-                
-                <h5>Produkty:</h5>
-                <ListGroup>
-                  {order.items.map((item, index) => (
-                    <ListGroup.Item key={index} className="d-flex justify-content-between">
-                      <span>{item.name || 'Nieznana pozycja'}</span>
-                      <Badge bg="secondary">× {item.quantity || 1}</Badge>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
+              </div>
+              
+              <Button 
+                variant="outline-success" 
+                size="sm"
+                onClick={() => handleCompleteOrder(order.id)}
+                disabled={order.status === "ready_to_serve"}
+              >
+                {order.status === "ready_to_serve" ? "Ready" : "Mark Ready"}
+              </Button>
+            </div>
 
-                {order.createdAt && (
-                  <div className="text-muted mt-3">
-                    {order.createdAt.toDate().toLocaleString('pl-PL')}
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
-          ))}
-        </div>
-      )}
-    </Container>
+            <ListGroup className="mt-2">
+              {order.items?.map((item, index) => (
+                <ListGroup.Item key={index}>
+                  {item.name} × {item.quantity}
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          </Card.Body>
+        </Card>
+      ))}
+    </div>
   );
 }
