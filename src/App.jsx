@@ -1,9 +1,10 @@
-import OrdersList from "./orders/OrdersList";
+// src/App.js
+import AppRouter from './routes/AppRouter.jsx';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
-export default function App() {
-  return (
-    <main className="p-6 bg-gray-100 min-h-screen">
-      <OrdersList />
-    </main>
-  );
+function App() {
+  return <AppRouter />;
 }
+
+export default App;

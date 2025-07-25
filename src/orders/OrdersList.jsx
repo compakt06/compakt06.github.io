@@ -1,36 +1,32 @@
-import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
-import { db } from "../firebase/firebase";
+import { useEffect, useState } from 'react';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { db, auth } from '../firebase/firebase';
+import { signOut } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
+import { Container, Card, Button, Spinner, Alert, ListGroup, Badge } from 'react-bootstrap';
+import { useAuth } from '../auth/authContext';
 
 export default function OrdersList() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   useEffect(() => {
-    console.log("Initializing Firestore listener...");
-    
-    // Basic query without sorting first to test if we get all documents
     const q = query(collection(db, "order"));
-    
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      console.log(`Received ${querySnapshot.size} documents`);
-      
       const allOrders = [];
       querySnapshot.forEach((doc) => {
-        console.log(`Processing document ${doc.id}`, doc.data());
-        
         const data = doc.data();
         allOrders.push({
           id: doc.id,
           table: data.table || 'Nieznany',
           staffID: data.staffID || 'Nieznany',
           status: data.status || 'Oczekujące',
-          createdAt: data.created_at || data.createdAt, // Handle both cases
-          items: normalizeItems(data.items)
+          createdAt: data.created_at || data.createdAt,
+          items: data.items || []
         });
       });
-
-      console.log("All orders:", allOrders);
       setOrders(allOrders);
       setLoading(false);
     }, (error) => {
@@ -41,71 +37,82 @@ export default function OrdersList() {
     return () => unsubscribe();
   }, []);
 
-  // Helper function to ensure items are always an array
-  const normalizeItems = (items) => {
-    if (!items) return [];
-    if (Array.isArray(items)) return items;
-    if (items.name) return [items]; // Single item case
-    return [];
-  };
-
-  const formatStatus = (status) => {
-    if (!status) return "Oczekujące";
-    return status.replace('_', ' ').replace('.', ' ');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   if (loading) {
-    return <div className="p-4">Ładowanie zamówień...</div>;
+    return (
+      <Container className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+        <Spinner animation="border" variant="primary" />
+      </Container>
+    );
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-3xl font-bold mb-6">📦 Zamówienia ({orders.length})</h1>
+    <Container className="py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className="mb-0">Zamówienia ({orders.length})</h1>
+        <div className="d-flex align-items-center">
+          <span className="me-3">
+            Witaj, <strong>{currentUser?.displayName || currentUser?.email}</strong>
+          </span>
+          <Button variant="outline-danger" onClick={handleLogout}>
+            Wyloguj
+          </Button>
+        </div>
+      </div>
       
       {orders.length === 0 ? (
-        <p className="text-gray-500">Brak zamówień</p>
+        <Alert variant="info">Brak zamówień</Alert>
       ) : (
-        <div className="space-y-4">
+        <div className="d-grid gap-3">
           {orders.map((order) => (
-            <div key={order.id} className="bg-white rounded-xl shadow p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                <p><strong>🪑 Stolik:</strong> {order.table}</p>
-                <p><strong>👨‍🍳 Kelner:</strong> {order.staffID}</p>
-                <p>
-                  <strong>📅 Status:</strong> 
-                  <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                    order.status.includes('complete') 
-                      ? 'bg-green-100 text-green-800' 
-                      : order.status.includes('progress')
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {formatStatus(order.status)}
-                  </span>
-                </p>
-              </div>
-              
-              <div className="mt-4">
-                <p className="font-semibold mb-2">🍔 Produkty:</p>
-                <ul className="space-y-1">
+            <Card key={order.id}>
+              <Card.Body>
+                <div className="d-flex justify-content-between mb-3">
+                  <div>
+                    <strong>Stolik:</strong> {order.table}
+                  </div>
+                  <div>
+                    <strong>Kelner:</strong> {order.staffID}
+                  </div>
+                  <div>
+                    <strong>Status:</strong> {' '}
+                    <Badge bg={
+                      order.status.toLowerCase().includes('complete') ? 'success' :
+                      order.status.toLowerCase().includes('progress') ? 'primary' : 'warning'
+                    }>
+                      {order.status}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <h5>Produkty:</h5>
+                <ListGroup>
                   {order.items.map((item, index) => (
-                    <li key={index} className="flex justify-between">
+                    <ListGroup.Item key={index} className="d-flex justify-content-between">
                       <span>{item.name || 'Nieznana pozycja'}</span>
-                      <span className="font-medium">× {item.quantity || 1}</span>
-                    </li>
+                      <Badge bg="secondary">× {item.quantity || 1}</Badge>
+                    </ListGroup.Item>
                   ))}
-                </ul>
-              </div>
+                </ListGroup>
 
-              {order.createdAt && (
-                <p className="text-sm text-gray-500 mt-3">
-                  🕒 {order.createdAt.toDate().toLocaleString('pl-PL')}
-                </p>
-              )}
-            </div>
+                {order.createdAt && (
+                  <div className="text-muted mt-3">
+                    {order.createdAt.toDate().toLocaleString('pl-PL')}
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
           ))}
         </div>
       )}
-    </div>
+    </Container>
   );
 }
