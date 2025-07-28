@@ -1,25 +1,18 @@
-// src/routes/AppRouter.js
+// src/AppRouter.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from '../login/Login.jsx';
-import Register from '../register/Register.jsx';
 import OrdersList from '../orders/OrdersList.jsx';
-import ProtectedRoute from '../auth/ProtectedRoute.jsx';
+import ManagerPanel from '../manager/ManagerPanel.jsx';
+import CompletedOrders from '../orders/CompletedOrders.jsx';
+import Archive from '../orders/Archive.jsx';
 
 export default function AppRouter() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/orders"
-          element={
-            <ProtectedRoute>
-              <OrdersList />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/" element={<Navigate to="/orders" replace />} />
+        <Route path="/" element={<OrdersList />} />
+        <Route path="/completed" element={<CompletedOrders />} />
+        <Route path="/archive" element={<Archive />} />
+        <Route path="/manager" element={<ManagerPanel />} />
       </Routes>
     </Router>
   );

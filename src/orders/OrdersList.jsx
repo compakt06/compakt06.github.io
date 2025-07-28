@@ -1,16 +1,47 @@
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase/firebase';
-import { Badge, Button, Card, ListGroup } from 'react-bootstrap';
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  doc, 
+  updateDoc,
+  getDoc
+} from 'firebase/firestore';
+import { db, auth } from '../firebase/firebase';
+import { 
+  Badge, 
+  Button, 
+  Card, 
+  ListGroup, 
+  Container,
+  Tabs,
+  Tab
+} from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 
 export default function OrdersList() {
   const [orders, setOrders] = useState([]);
+  const [isManager, setIsManager] = useState(false);
+  const navigate = useNavigate();
+
+  // Check if user is manager
+  useEffect(() => {
+    const checkManagerStatus = async () => {
+      if (auth.currentUser) {
+        const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+        setIsManager(userDoc.data()?.isManager || false);
+      }
+    };
+    checkManagerStatus();
+  }, []);
 
   // Update order status
-  const handleCompleteOrder = async (orderId) => {
+  const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await updateDoc(doc(db, "order", orderId), {
-        status: "ready_to_serve"
+        status: newStatus,
+        ...(newStatus === "Served" && { servedAt: new Date() })
       });
     } catch (error) {
       console.error("Error updating order:", error);
@@ -32,8 +63,13 @@ export default function OrdersList() {
     return `${diffMinutes}m`;
   };
 
+  // Fetch active orders (not served)
   useEffect(() => {
-    const q = query(collection(db, "order"));
+    const q = query(
+      collection(db, "order"),
+      where("status", "!=", "Served")
+    );
+    
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const allOrders = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -46,53 +82,111 @@ export default function OrdersList() {
     return () => unsubscribe();
   }, []);
 
-  // Dynamic title (excludes "ready_to_serve" orders)
+  // Dynamic title counter
   useEffect(() => {
     const pendingOrders = orders.filter(order => 
-      order.status !== "ready_to_serve"
+      order.status !== "Served"
     ).length;
-    document.title = `🍗q (${pendingOrders}) New Orders - KFC System`;
+    document.title = `🍗 (${pendingOrders}) Active Orders - KFC System`;
   }, [orders]);
 
   return (
-    <div className="order-list">
-      {orders.map((order) => (
-        <Card key={order.id} className="mb-3">
-          <Card.Body>
-            <div className="d-flex justify-content-between align-items-start">
-              <div>
-                <h5>Table {order.table}</h5>
-                <Badge bg={
-                  order.status === "ready_to_serve" ? "success" :
-                  order.status === "cooking" ? "primary" : "warning"
-                }>
-                  {order.status}
-                </Badge>
-                <div className="text-muted mt-1">
-                  Waiting: {getWaitingTime(order.createdAt)}
-                </div>
-              </div>
-              
+    <Container className="py-3">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Kitchen Orders</h2>
+        {isManager && (
+          <Button 
+            variant="primary"
+            onClick={() => navigate('/manager')}
+          >
+            Manager Panel
+          </Button>
+        )}
+      </div>
+
+      <Tabs defaultActiveKey="active" className="mb-3">
+        <Tab eventKey="active" title="Active Orders">
+          {orders.length === 0 ? (
+            <p className="text-muted">No active orders</p>
+          ) : (
+            <div className="order-list">
+              {orders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onUpdateStatus={updateOrderStatus}
+                  getWaitingTime={getWaitingTime}
+                />
+              ))}
+            </div>
+          )}
+        </Tab>
+        <Tab 
+          eventKey="completed" 
+          title="Completed Today" 
+          onClick={() => navigate('/completed')}
+        />
+        <Tab 
+          eventKey="archive" 
+          title="Archive" 
+          onClick={() => navigate('/archive')}
+        />
+      </Tabs>
+    </Container>
+  );
+}
+
+const OrderCard = ({ order, onUpdateStatus, getWaitingTime }) => {
+  const statusColors = {
+    "Preparing/Issue": "warning",
+    "Ready to serve": "primary",
+    "Served": "success"
+  };
+
+  return (
+    <Card className="mb-3">
+      <Card.Body>
+        <div className="d-flex justify-content-between align-items-start">
+          <div>
+            <h5>Table {order.table}</h5>
+            <Badge bg={statusColors[order.status]}>
+              {order.status}
+            </Badge>
+            <div className="text-muted mt-1">
+              Waiting: {getWaitingTime(order.createdAt)}
+            </div>
+          </div>
+          
+          <div className="d-flex gap-2">
+            {order.status === "Preparing/Issue" && (
+              <Button 
+                variant="outline-primary" 
+                size="sm"
+                onClick={() => onUpdateStatus(order.id, "Ready to serve")}
+              >
+                Mark Ready
+              </Button>
+            )}
+            {order.status === "Ready to serve" && (
               <Button 
                 variant="outline-success" 
                 size="sm"
-                onClick={() => handleCompleteOrder(order.id)}
-                disabled={order.status === "ready_to_serve"}
+                onClick={() => onUpdateStatus(order.id, "Served")}
               >
-                {order.status === "ready_to_serve" ? "Ready" : "Mark Ready"}
+                Mark Served
               </Button>
-            </div>
+            )}
+          </div>
+        </div>
 
-            <ListGroup className="mt-2">
-              {order.items?.map((item, index) => (
-                <ListGroup.Item key={index}>
-                  {item.name} × {item.quantity}
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          </Card.Body>
-        </Card>
-      ))}
-    </div>
+        <ListGroup className="mt-2">
+          {order.items?.map((item, index) => (
+            <ListGroup.Item key={index}>
+              {item.name} × {item.quantity}
+            </ListGroup.Item>
+          ))}
+        </ListGroup>
+      </Card.Body>
+    </Card>
   );
-}
+};
