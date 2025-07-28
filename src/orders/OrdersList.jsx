@@ -51,7 +51,7 @@ export default function OrdersList() {
     const pendingOrders = orders.filter(order => 
       order.status !== "ready_to_serve"
     ).length;
-    document.title = `🍗 (${pendingOrders}) New Orders - KFC System`;
+    document.title = `🍗q (${pendingOrders}) New Orders - KFC System`;
   }, [orders]);
 
   return (
