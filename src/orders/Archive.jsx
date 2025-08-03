@@ -1,25 +1,53 @@
-// src/orders/Archive.jsx
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/firebase';
 import { Container, Table } from 'react-bootstrap';
 
 export default function Archive() {
   const [allOrders, setAllOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const q = query(collection(db, "order"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setAllOrders(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-    return () => unsubscribe();
+    fetch('http://localhost:5000/api/orders/archive')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch orders');
+        return res.json();
+      })
+      .then(data => {
+        setAllOrders(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
   }, []);
+
+  if (loading) return <Container>Loading orders...</Container>;
+  if (error) return <Container>Error: {error}</Container>;
 
   return (
     <Container>
       <h2 className="my-3">Order Archive</h2>
       <Table striped>
-        {/* Table implementation showing all historical orders */}
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Table</th>
+            <th>Status</th>
+            <th>Created At</th>
+            {/* Dodaj więcej kolumn jeśli potrzeba */}
+          </tr>
+        </thead>
+        <tbody>
+          {allOrders.map(order => (
+            <tr key={order.id}>
+              <td>{order.id}</td>
+              <td>{order.table}</td>
+              <td>{order.status}</td>
+              <td>{new Date(order.createdAt).toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
       </Table>
     </Container>
   );

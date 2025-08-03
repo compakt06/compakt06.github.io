@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import {
   collection,
   onSnapshot,
@@ -30,7 +30,7 @@ export default function OrdersList() {
   const [mainTab, setMainTab] = useState("active");
   const navigate = useNavigate();
 
-  // ✅ Update status of order
+  // Aktualizacja statusu zamówienia
   const updateOrderStatus = async (orderId, newStatus) => {
     await updateDoc(doc(db, "order", orderId), {
       status: newStatus,
@@ -38,7 +38,7 @@ export default function OrdersList() {
     });
   };
 
-  // ✅ Calculate waiting time in minutes
+  // Obliczanie czasu oczekiwania
   const calculateWaitTime = (createdAt, endTime) => {
     if (!createdAt) return "0m";
     const end = endTime ? endTime.toDate() : new Date();
@@ -46,7 +46,6 @@ export default function OrdersList() {
     return diff >= 60 ? `${Math.floor(diff / 60)}h ${diff % 60}m` : `${diff}m`;
   };
 
-  // ✅ Firestore listener (split into active/completed/archived)
   useEffect(() => {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -55,20 +54,22 @@ export default function OrdersList() {
       const allOrders = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        createdAt: doc.data().createdAt || doc.data().created_at
+        createdAt: doc.data().createdAt,
+        servedAt: doc.data().servedAt
       }));
 
-      // Active = not served, not cancelled
       setOrders(allOrders.filter(order => !["Served", "Cancelled"].includes(order.status)));
 
-      // Completed = served today
       setCompletedOrders(allOrders.filter(order =>
-        order.status === "Served" && order.servedAt?.toDate() >= startOfDay
+        order.status === "Served" &&
+        order.servedAt &&
+        order.servedAt.toDate() >= startOfDay
       ));
 
-      // Archived = served before today OR cancelled
       setArchivedOrders(allOrders.filter(order =>
-        (order.status === "Served" && order.servedAt?.toDate() < startOfDay) ||
+        (order.status === "Served" &&
+          order.servedAt &&
+          order.servedAt.toDate() < startOfDay) ||
         order.status === "Cancelled"
       ));
     });
@@ -76,7 +77,6 @@ export default function OrdersList() {
     return () => unsubAll();
   }, []);
 
-  // ✅ Auto-mark late orders (active only)
   useEffect(() => {
     const timer = setInterval(() => {
       orders.forEach(order => {
@@ -89,12 +89,10 @@ export default function OrdersList() {
     return () => clearInterval(timer);
   }, [orders]);
 
-  // ✅ Dynamic title
   useEffect(() => {
     document.title = `🍗 (${orders.length}) Active Orders - KFC System`;
   }, [orders]);
 
-  // ✅ Filter helper
   const filterOrders = (list, filter) =>
     filter === "All" ? list : list.filter(order => order.status === filter);
 
@@ -108,23 +106,23 @@ export default function OrdersList() {
 
   return (
     <div style={{ display: "flex", height: "100vh", background: "#fafafa" }}>
-      {/* 🔹 Sidebar */}
+      {/* Sidebar */}
       <Sidebar mainTab={mainTab} setMainTab={setMainTab} navigate={navigate} />
 
-      {/* 🔸 Main Content */}
+      {/* Główna zawartość */}
       <Container fluid className="p-4" style={{ overflowY: "auto" }}>
         <h2 className="fw-bold mb-3" style={{ color: "#d9232d" }}>
           {mainTab === "active" ? "Active Orders" : mainTab === "completed" ? "Completed Orders" : "Archive"}
         </h2>
 
-        {/* 🔻 Filter Dropdown */}
+        {/* Filtr */}
         <Form.Select className="mb-3" value={filter} onChange={e => set(e.target.value)} style={{ maxWidth: 220 }}>
           {["All", "Preparing", "Issue", "Ready to serve", "Served", "Late", "Cancelled"].map(status => (
             <option key={status} value={status}>{status}</option>
           ))}
         </Form.Select>
 
-        {/* 📝 Orders list */}
+        {/* Lista zamówień */}
         {list.length === 0 ? (
           <p className="text-muted text-center mt-3">No {mainTab} orders</p>
         ) : (
@@ -142,7 +140,6 @@ export default function OrdersList() {
   );
 }
 
-/* 📌 Sidebar Component */
 const Sidebar = ({ mainTab, setMainTab, navigate }) => {
   const buttons = [
     { icon: <Clock size={20} />, label: "Active Orders", tab: "active" },
@@ -201,7 +198,6 @@ const SidebarButton = ({ icon, label, active, onClick }) => (
   </div>
 );
 
-/* 📦 Order Card Component */
 const OrderCard = ({ order, onUpdateStatus, calculateWaitTime }) => {
   const statusColors = {
     Preparing: "warning",
@@ -213,7 +209,6 @@ const OrderCard = ({ order, onUpdateStatus, calculateWaitTime }) => {
   };
   const allStatuses = ["Preparing", "Issue", "Ready to serve", "Served", "Late"];
 
-  // ✅ Determine if waiting time should freeze
   const freezeAt = order.status === "Served" ? order.servedAt : order.status === "Cancelled" ? order.cancelledAt : null;
 
   return (
@@ -222,7 +217,6 @@ const OrderCard = ({ order, onUpdateStatus, calculateWaitTime }) => {
       ...(order.status === "Cancelled" && { opacity: 0.6, background: "#f8f9fa" })
     }}>
       <Card.Body>
-        {/* 🔹 Header */}
         <div className="d-flex justify-content-between align-items-start">
           <div>
             <h5 className="fw-bold">Table {order.table}</h5>
@@ -239,7 +233,6 @@ const OrderCard = ({ order, onUpdateStatus, calculateWaitTime }) => {
             <div className="text-muted small">👤 Worker: {order.staffID || "N/A"}</div>
           </div>
 
-          {/* 🔽 Status dropdown (active orders only) */}
           {onUpdateStatus && order.status !== "Cancelled" && (
             <Dropdown>
               <Dropdown.Toggle variant="outline-dark" size="sm">
@@ -260,7 +253,6 @@ const OrderCard = ({ order, onUpdateStatus, calculateWaitTime }) => {
           )}
         </div>
 
-        {/* 📦 Order items */}
         <ListGroup className="mt-3">
           {order.items?.map((item, idx) => (
             <ListGroup.Item

@@ -1,15 +1,4 @@
-import { useState, useEffect } from 'react';
-import {
-  collection,
-  query,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-  onSnapshot,
-  addDoc
-} from 'firebase/firestore';
-import { db } from '../firebase/firebase';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Button,
@@ -37,118 +26,134 @@ export default function ManagerPanel() {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showRemoveItemsModal, setShowRemoveItemsModal] = useState(false);
-  // Map of item index -> boolean removed state toggled in modal
   const [itemsToggleMap, setItemsToggleMap] = useState(new Map());
 
   const navigate = useNavigate();
 
-  // Load workers if logged in
+  // --- Fetch workers ---
+  const fetchWorkers = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/workers');
+      if (!res.ok) throw new Error('Failed to fetch workers');
+      const data = await res.json();
+      setWorkers(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // --- Fetch orders ---
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/orders');
+      if (!res.ok) throw new Error('Failed to fetch orders');
+      const data = await res.json();
+      setOrders(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // --- On login success, fetch data ---
   useEffect(() => {
     if (loggedIn) {
-      const fetchWorkers = async () => {
-        const q = query(collection(db, 'staff'));
-        const snapshot = await getDocs(q);
-        setWorkers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-      };
       fetchWorkers();
+      fetchOrders();
     }
   }, [loggedIn]);
 
-  // Live listen for orders
-  useEffect(() => {
-    if (loggedIn) {
-      const unsubscribe = onSnapshot(collection(db, 'order'), snapshot => {
-        setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      });
-      return () => unsubscribe();
-    }
-  }, [loggedIn]);
-
-  // Firestore-Only Login
+  // --- Handle login ---
   const handleLogin = async () => {
     try {
       setError('');
-      const staffRef = collection(db, 'staff');
-      const staffSnapshot = await getDocs(staffRef);
-
-      const staffMember = staffSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .find(worker => worker.email === email && worker.password === password);
-
-      if (!staffMember) {
-        setError('Invalid email or password');
+      const res = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setError(err.error || 'Login failed');
         return;
       }
-
-      if (!staffMember.isManager) {
+      const user = await res.json();
+      if (!user.isManager) {
         setError('Access Denied: You are not a manager.');
         return;
       }
-
       setLoggedIn(true);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError('Login failed.');
     }
   };
 
-  // Logout function
+  // --- Handle logout ---
   const handleLogout = () => {
     setLoggedIn(false);
     setEmail('');
     setPassword('');
   };
 
-  // Cancel Order (just changes status)
-  const cancelOrder = async orderId => {
-    await updateDoc(doc(db, 'order', orderId), { status: 'Cancelled' });
-  };
-
-  // Delete Worker (JSM restriction)
-  const deleteWorker = async (workerId, role) => {
-    if (role === 'Supervisor') {
-      alert('❌ JSM cannot delete a Supervisor!');
-      return;
-    }
-    await deleteDoc(doc(db, 'staff', workerId));
-  };
-
-  // Add Worker
+  // --- Add worker ---
   const addWorker = async () => {
     if (!newWorker.name || !newWorker.email || !newWorker.password || !newWorker.role) {
       alert('Please fill out all fields');
       return;
     }
-
     try {
-      await addDoc(collection(db, 'staff'), {
-        name: newWorker.name,
-        email: newWorker.email,
-        password: newWorker.password,
-        role: newWorker.role,
-        isManager: ['JSM', 'Assistant Manager', 'Manager', 'Supervisor'].includes(newWorker.role)
+      const res = await fetch('http://localhost:5000/api/workers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newWorker),
       });
-
-      // Clear the modal and refresh workers list
-      setNewWorker({ email: '', name: '', role: '', password: '' });
+      if (!res.ok) throw new Error('Failed to add worker');
       setShowAddWorker(false);
-
-      const snapshot = await getDocs(collection(db, 'staff'));
-      setWorkers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-    } catch (err) {
-      console.error('Error adding worker: ', err);
+      setNewWorker({ email: '', name: '', role: '', password: '' });
+      fetchWorkers();
+    } catch {
+      alert('Error adding worker');
     }
   };
 
-  // Open Remove Items Modal & reset toggle map
-  const openRemoveItemsModal = order => {
+  // --- Delete worker ---
+  const deleteWorker = async (workerId, role) => {
+    if (role === 'Supervisor') {
+      alert('❌ Cannot delete a Supervisor!');
+      return;
+    }
+    try {
+      const res = await fetch(`http://localhost:5000/api/workers/${workerId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete worker');
+      fetchWorkers();
+    } catch {
+      alert('Error deleting worker');
+    }
+  };
+
+  // --- Cancel order ---
+  const cancelOrder = async (orderId) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Cancelled' }),
+      });
+      if (!res.ok) throw new Error('Failed to cancel order');
+      fetchOrders();
+    } catch {
+      alert('Error cancelling order');
+    }
+  };
+
+  // --- Open Remove Items Modal ---
+  const openRemoveItemsModal = (order) => {
     setSelectedOrder(order);
-    setItemsToggleMap(new Map()); // reset toggles on open
+    setItemsToggleMap(new Map());
     setShowRemoveItemsModal(true);
   };
 
-  // Toggle remove/unremove state for item index in modal
-  const toggleItemToRemove = index => {
+  // --- Toggle item removed state ---
+  const toggleItemToRemove = (index) => {
     setItemsToggleMap(prev => {
       const newMap = new Map(prev);
       const currentlyToggled = newMap.has(index) ? newMap.get(index) : null;
@@ -159,7 +164,7 @@ export default function ManagerPanel() {
     });
   };
 
-  // Confirm Remove/Unremove items update
+  // --- Confirm removing items ---
   const handleRemoveItemsConfirm = async () => {
     if (!selectedOrder) return;
 
@@ -170,25 +175,28 @@ export default function ManagerPanel() {
       return item;
     });
 
-    await updateDoc(doc(db, 'order', selectedOrder.id), { items: newItems });
-
-    setOrders(prev =>
-      prev.map(o => (o.id === selectedOrder.id ? { ...o, items: newItems } : o))
-    );
-
-    setShowRemoveItemsModal(false);
+    try {
+      const res = await fetch(`http://localhost:5000/api/orders/${selectedOrder.id}/items`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: newItems }),
+      });
+      if (!res.ok) throw new Error('Failed to update items');
+      setShowRemoveItemsModal(false);
+      fetchOrders();
+    } catch {
+      alert('Error updating items');
+    }
   };
 
-  // Show login if not logged in
   if (!loggedIn) {
     return (
       <Container className="py-5" style={{ maxWidth: '400px', textAlign: 'center' }}>
         <img src={KFCLogo} alt="KFC Logo" style={{ height: '80px', marginBottom: '10px' }} />
-        <h3 className="mb-3" style={{ fontWeight: 'bold', color: '#d9232d' }}>
-          Manager Login
-        </h3>
+        <h3 className="mb-3" style={{ fontWeight: 'bold', color: '#d9232d' }}>Manager Login</h3>
 
         {error && <Alert variant="danger">{error}</Alert>}
+
         <Form>
           <Form.Group className="mb-3">
             <Form.Label>Email</Form.Label>
@@ -210,34 +218,24 @@ export default function ManagerPanel() {
             />
           </Form.Group>
 
-          <Button variant="dark" className="w-100 mb-2" onClick={handleLogin}>
-            Login
-          </Button>
-          <Button variant="outline-secondary" className="w-100" onClick={() => navigate('/')}>
-            ⬅ Back
-          </Button>
+          <Button variant="dark" className="w-100 mb-2" onClick={handleLogin}>Login</Button>
+          <Button variant="outline-secondary" className="w-100" onClick={() => navigate('/orders')}>⬅ Back</Button>
         </Form>
       </Container>
     );
   }
 
-  // Manager panel UI (with logout)
   return (
     <Container className="py-3">
-      {/* HEADER */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div className="text-center">
           <img src={KFCLogo} alt="KFC Logo" style={{ height: '80px', marginBottom: '10px' }} />
           <h2 style={{ fontWeight: 'bold', color: '#d9232d' }}>Manager Panel</h2>
         </div>
-        <Button variant="outline-dark" className="h-50" onClick={handleLogout}>
-          🚪 Logout
-        </Button>
+        <Button variant="outline-dark" className="h-50" onClick={handleLogout}>🚪 Logout</Button>
       </div>
 
-      {/* TABS for Orders & Workers */}
       <Tabs defaultActiveKey="orders" className="mb-3" fill>
-        {/* ORDERS TAB */}
         <Tab eventKey="orders" title="Orders">
           {orders.length === 0 ? (
             <p className="text-muted text-center mt-3">No orders found</p>
@@ -255,13 +253,10 @@ export default function ManagerPanel() {
           )}
         </Tab>
 
-        {/* WORKERS TAB */}
         <Tab eventKey="workers" title="Workers">
           <div className="mb-3 d-flex justify-content-between align-items-center">
             <h4>Workers</h4>
-            <Button variant="dark" onClick={() => setShowAddWorker(true)}>
-              Add Worker
-            </Button>
+            <Button variant="dark" onClick={() => setShowAddWorker(true)}>Add Worker</Button>
           </div>
 
           <Table striped>
@@ -345,12 +340,8 @@ export default function ManagerPanel() {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAddWorker(false)}>
-            Cancel
-          </Button>
-          <Button variant="dark" onClick={addWorker}>
-            Add Worker
-          </Button>
+          <Button variant="secondary" onClick={() => setShowAddWorker(false)}>Cancel</Button>
+          <Button variant="dark" onClick={addWorker}>Add Worker</Button>
         </Modal.Footer>
       </Modal>
 
@@ -385,9 +376,7 @@ export default function ManagerPanel() {
           </ListGroup>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowRemoveItemsModal(false)}>
-            Cancel
-          </Button>
+          <Button variant="secondary" onClick={() => setShowRemoveItemsModal(false)}>Cancel</Button>
           <Button
             variant="danger"
             disabled={itemsToggleMap.size === 0}
@@ -401,7 +390,7 @@ export default function ManagerPanel() {
   );
 }
 
-/* Order Card for Manager */
+// --- Manager Order Card ---
 const ManagerOrderCard = ({ order, cancelOrder, openRemoveItemsModal }) => {
   const statusColors = {
     Preparing: 'warning',
@@ -412,8 +401,9 @@ const ManagerOrderCard = ({ order, cancelOrder, openRemoveItemsModal }) => {
     Cancelled: 'secondary'
   };
 
-  const cancelledStyle =
-    order.status === 'Cancelled' ? { opacity: 0.6, backgroundColor: '#f8f9fa' } : {};
+  const cancelledStyle = order.status === 'Cancelled'
+    ? { opacity: 0.6, backgroundColor: '#f8f9fa' }
+    : {};
 
   return (
     <Card className="mb-3 shadow-sm" style={{ borderLeft: '8px solid #d9232d', ...cancelledStyle }}>
@@ -430,7 +420,6 @@ const ManagerOrderCard = ({ order, cancelOrder, openRemoveItemsModal }) => {
           </div>
 
           <div className="d-flex flex-column gap-2">
-            {/* Cancel Order Button */}
             <Button
               variant="outline-danger"
               size="sm"
@@ -440,7 +429,6 @@ const ManagerOrderCard = ({ order, cancelOrder, openRemoveItemsModal }) => {
               ❌ Cancel Order
             </Button>
 
-            {/* Remove Items Button */}
             <Button
               variant="outline-warning"
               size="sm"
@@ -452,7 +440,6 @@ const ManagerOrderCard = ({ order, cancelOrder, openRemoveItemsModal }) => {
           </div>
         </div>
 
-        {/* ITEMS */}
         <ListGroup className="mt-3">
           {order.items?.map((item, index) => (
             <ListGroup.Item
