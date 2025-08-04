@@ -38,12 +38,13 @@ export default function OrdersList() {
     });
   };
 
-  // Obliczanie czasu oczekiwania
-  const calculateWaitTime = (createdAt, endTime) => {
-    if (!createdAt) return "0m";
-    const end = endTime ? endTime.toDate() : new Date();
-    const diff = Math.floor((end - createdAt.toDate()) / 60000);
-    return diff >= 60 ? `${Math.floor(diff / 60)}h ${diff % 60}m` : `${diff}m`;
+  // Formatowanie waitTime (minuty => 0m / 1h 5m)
+  const formatWaitTime = (minutes) => {
+    if (minutes === null || minutes === undefined) return "0m";
+    if (minutes < 60) return `${minutes}m`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${h}h ${m}m`;
   };
 
   useEffect(() => {
@@ -51,12 +52,30 @@ export default function OrdersList() {
     startOfDay.setHours(0, 0, 0, 0);
 
     const unsubAll = onSnapshot(collection(db, "order"), (snapshot) => {
-      const allOrders = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt,
-        servedAt: doc.data().servedAt
-      }));
+      const allOrders = snapshot.docs.map(doc => {
+        const data = doc.data();
+
+        // Oblicz waitTime: jeśli jest freezeAt (servedAt lub cancelledAt) to licz do tego momentu,
+        // inaczej do teraz
+        const freezeAt = data.servedAt || data.cancelledAt ? data.servedAt || data.cancelledAt : null;
+        const createdAtDate = data.created_at?.toDate();
+
+        let waitTime = 0;
+        if (createdAtDate) {
+          const endDate = freezeAt ? freezeAt.toDate() : new Date();
+          waitTime = Math.floor((endDate - createdAtDate) / 60000); // minuty
+          if (waitTime < 0) waitTime = 0; // bezpieczeństwo
+        }
+
+        return {
+          id: doc.id,
+          ...data,
+          waitTime,
+          createdAt: data.createdAt,
+          servedAt: data.servedAt,
+          cancelledAt: data.cancelledAt
+        };
+      });
 
       setOrders(allOrders.filter(order => !["Served", "Cancelled"].includes(order.status)));
 
@@ -131,7 +150,7 @@ export default function OrdersList() {
               key={order.id}
               order={order}
               onUpdateStatus={mainTab === "active" ? updateOrderStatus : null}
-              calculateWaitTime={calculateWaitTime}
+              formatWaitTime={formatWaitTime}
             />
           ))
         )}
@@ -198,7 +217,7 @@ const SidebarButton = ({ icon, label, active, onClick }) => (
   </div>
 );
 
-const OrderCard = ({ order, onUpdateStatus, calculateWaitTime }) => {
+const OrderCard = ({ order, onUpdateStatus, formatWaitTime }) => {
   const statusColors = {
     Preparing: "warning",
     Issue: "danger",
@@ -208,8 +227,6 @@ const OrderCard = ({ order, onUpdateStatus, calculateWaitTime }) => {
     Cancelled: "secondary"
   };
   const allStatuses = ["Preparing", "Issue", "Ready to serve", "Served", "Late"];
-
-  const freezeAt = order.status === "Served" ? order.servedAt : order.status === "Cancelled" ? order.cancelledAt : null;
 
   return (
     <Card className="mb-3 shadow-sm" style={{
@@ -227,7 +244,7 @@ const OrderCard = ({ order, onUpdateStatus, calculateWaitTime }) => {
               <div className="text-danger fw-bold mt-1">🚫 Cancelled by Manager</div>
             )}
             <div className="text-muted mt-1">
-              ⏳ Waiting: {calculateWaitTime(order.createdAt, freezeAt)}
+              ⏳ Waiting: {formatWaitTime(order.waitTime)}
             </div>
             <div className="text-muted small">🆔 Order ID: {order.id}</div>
             <div className="text-muted small">👤 Worker: {order.staffID || "N/A"}</div>

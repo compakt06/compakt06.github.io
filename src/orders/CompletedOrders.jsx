@@ -8,7 +8,6 @@ export default function CompletedOrders() {
   const [clearError, setClearError] = useState(null);
   const [clearSuccess, setClearSuccess] = useState(null);
 
-  // Fetch completed orders for today from backend
   useEffect(() => {
     fetch('http://localhost:5000/api/orders/completed-today')
       .then(res => {
@@ -25,7 +24,6 @@ export default function CompletedOrders() {
       });
   }, []);
 
-  // Clear all completed orders (call backend DELETE endpoint)
   const clearCompleted = async () => {
     setClearError(null);
     setClearSuccess(null);

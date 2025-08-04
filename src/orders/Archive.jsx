@@ -34,8 +34,7 @@ export default function Archive() {
             <th>Order ID</th>
             <th>Table</th>
             <th>Status</th>
-            <th>Created At</th>
-            {/* Dodaj więcej kolumn jeśli potrzeba */}
+            <th>Completed At</th>
           </tr>
         </thead>
         <tbody>
@@ -44,7 +43,7 @@ export default function Archive() {
               <td>{order.id}</td>
               <td>{order.table}</td>
               <td>{order.status}</td>
-              <td>{new Date(order.createdAt).toLocaleString()}</td>
+              <td>{order.completedAt ? new Date(order.completedAt).toLocaleString() : 'N/A'}</td>
             </tr>
           ))}
         </tbody>
