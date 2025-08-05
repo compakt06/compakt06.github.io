@@ -23,7 +23,7 @@ export default function About() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 4H2v16h20V6H12l-2-2z" />
               </svg>
-              <span>About Me</span>
+              <span>About me</span>
             </div>
             <div className="flex gap-1">
               <button aria-label="Minimize" className="w-5 h-5 bg-[#ece9d8] border border-[#7a9ec8] rounded-sm cursor-pointer p-0 font-bold text-[12px] text-[#0058e3] leading-none select-none hover:bg-[#0a83f8] hover:text-white transition-colors">_</button>
