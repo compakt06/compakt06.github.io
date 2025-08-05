@@ -4,7 +4,7 @@ import windowsBg from "../assets/windowsbg.jpg";
 export default function About() {
   const langs = [
     { name: "HTML", logo: "https://cdn.simpleicons.org/html5/0058e3" },
-    { name: "CSS", logo: "https://cdn.simpleicons.org/css3/0058e3" },
+    { name: "CSS", logo: "https://cdn.simpleicons.org/css/0058e3" },
     { name: "JS", logo: "https://cdn.simpleicons.org/javascript/0058e3" },
     { name: "React", logo: "https://cdn.simpleicons.org/react/0058e3" },
     { name: "Vue", logo: "https://cdn.simpleicons.org/vuedotjs/0058e3" },
